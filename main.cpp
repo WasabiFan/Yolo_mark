@@ -268,19 +268,24 @@ int main(int argc, char *argv[])
 			images_path = std::string(argv[1]);         // path to images, train and synset
 		}
 		else {
-			std::cout << "Usage: [path_to_images] [train.txt] [obj.names] \n";
+			std::cout << "Usage: [path_to_images] [path_to_labels] [train.txt] [obj.names] \n";
 			return 0;
 		}
 
 		std::string train_filename = images_path + "train.txt";
 		std::string synset_filename = images_path + "obj.names";
+		std::string labels_path = images_path;
 
 		if (argc >= 3) {
-			train_filename = std::string(argv[2]);		// file containing: list of images
+			labels_path = std::string(argv[2]);
 		}
 
 		if (argc >= 4) {
-			synset_filename = std::string(argv[3]);		// file containing: object names
+			train_filename = std::string(argv[3]);		// file containing: list of images
+		}
+
+		if (argc >= 5) {
+			synset_filename = std::string(argv[4]);		// file containing: object names
 		}
 
         // optical flow tracker
@@ -331,13 +336,20 @@ int main(int argc, char *argv[])
 		}
 
 		bool show_mouse_coords = false;
+
 		std::vector<std::string> filenames_in_folder;
-		//glob(images_path, filenames_in_folder); // void glob(String pattern, std::vector<String>& result, bool recursive = false);
 		cv::String images_path_cv = images_path;
 		std::vector<cv::String> filenames_in_folder_cv;
 		glob(images_path_cv, filenames_in_folder_cv); // void glob(String pattern, std::vector<String>& result, bool recursive = false);
 		for (auto &i : filenames_in_folder_cv) 
 			filenames_in_folder.push_back(i);
+
+		std::vector<std::string> label_filenames_in_folder;
+		cv::String label_images_path_cv = labels_path;
+		std::vector<cv::String> label_filenames_in_folder_cv;
+		glob(label_images_path_cv, label_filenames_in_folder_cv); // void glob(String pattern, std::vector<String>& result, bool recursive = false);
+		for (auto &i : label_filenames_in_folder_cv) 
+			label_filenames_in_folder.push_back(i);
 
 		std::vector<std::string> jpg_filenames_path;
 		std::vector<std::string> jpg_filenames;
@@ -374,6 +386,23 @@ int main(int argc, char *argv[])
 				txt_filenames.push_back(filename_without_ext);
 			}
 		}
+
+		for (auto &i : label_filenames_in_folder)
+		{
+			int pos_filename = 0;
+			if ((1 + i.find_last_of("\\")) < i.length()) pos_filename = 1 + i.find_last_of("\\");
+			if ((1 + i.find_last_of("/")) < i.length()) pos_filename = std::max(pos_filename, 1 + (int)i.find_last_of("/"));
+
+
+			std::string const filename = i.substr(pos_filename);
+			std::string const ext = i.substr(i.find_last_of(".") + 1);
+			std::string const filename_without_ext = filename.substr(0, filename.find_last_of("."));
+
+			if (ext == "txt") {
+				txt_filenames.push_back(filename_without_ext);
+			}
+		}
+
 		std::sort(jpg_filenames.begin(), jpg_filenames.end());
 		std::sort(jpg_filenames_path.begin(), jpg_filenames_path.end());
 		std::sort(txt_filenames.begin(), txt_filenames.end());
@@ -517,7 +546,7 @@ int main(int argc, char *argv[])
 						std::string const jpg_filename = jpg_filenames[old_trackbar_value];
 						std::string const filename_without_ext = jpg_filename.substr(0, jpg_filename.find_last_of("."));
 						std::string const txt_filename = filename_without_ext + ".txt";
-						std::string const txt_filename_path = images_path + "/" + txt_filename;
+						std::string const txt_filename_path = labels_path + "/" + txt_filename;
 
 						std::cout << "txt_filename_path = " << txt_filename_path << std::endl;
 
@@ -585,7 +614,7 @@ int main(int argc, char *argv[])
 							std::string const jpg_filename = jpg_filenames[trackbar_value];
 							std::string const txt_filename = jpg_filename.substr(0, jpg_filename.find_last_of(".")) + ".txt";
 							//std::cout << (images_path + "/" + txt_filename) << std::endl;
-							std::ifstream ifs(images_path + "/" + txt_filename);
+							std::ifstream ifs(labels_path + "/" + txt_filename);
                             if (copy_previous_marks) copy_previous_marks = false;
                             else if (tracker_copy_previous_marks) {
                                 tracker_copy_previous_marks = false;
