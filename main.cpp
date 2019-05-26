@@ -268,13 +268,14 @@ int main(int argc, char *argv[])
 			images_path = std::string(argv[1]);         // path to images, train and synset
 		}
 		else {
-			std::cout << "Usage: [path_to_images] [path_to_labels] [train.txt] [obj.names] \n";
+			std::cout << "Usage: [path_to_images] [path_to_labels] [train.txt] [obj.names] [filter_file_list.txt] \n";
 			return 0;
 		}
 
 		std::string train_filename = images_path + "train.txt";
 		std::string synset_filename = images_path + "obj.names";
 		std::string labels_path = images_path;
+		std::string filter_list_file;
 
 		if (argc >= 3) {
 			labels_path = std::string(argv[2]);
@@ -286,6 +287,10 @@ int main(int argc, char *argv[])
 
 		if (argc >= 5) {
 			synset_filename = std::string(argv[4]);		// file containing: object names
+		}
+
+		if (argc >= 6) {
+			filter_list_file = std::string(argv[5]);
 		}
 
         // optical flow tracker
@@ -323,7 +328,7 @@ int main(int argc, char *argv[])
 				if (pressed_key == 27 || pressed_key == 1048603) break;  // ESC - exit (OpenCV 2.x / 3.x)
 				if (frame_counter++ >= save_each_frames) {		// save frame for each 3 second
 					frame_counter = 0;
-                    std::stringstream image_counter_ss;
+                    std::stringstream image_counter_ss; 
                     image_counter_ss << std::setw(8) << std::setfill('0') << image_counter;
                     if (backward) image_counter--;
                     else image_counter++;
@@ -350,6 +355,18 @@ int main(int argc, char *argv[])
 		glob(label_images_path_cv, label_filenames_in_folder_cv); // void glob(String pattern, std::vector<String>& result, bool recursive = false);
 		for (auto &i : label_filenames_in_folder_cv) 
 			label_filenames_in_folder.push_back(i);
+		
+		std::set<std::string> requested_files;
+		if (!filter_list_file.empty())
+		{
+			std::ifstream ifs(filter_list_file);
+			if (!ifs.is_open()) {
+				throw(std::runtime_error("Can't open file: " + filter_list_file));
+			}
+
+			for (std::string line; getline(ifs, line);)
+				requested_files.insert(line);
+		}
 
 		std::vector<std::string> jpg_filenames_path;
 		std::vector<std::string> jpg_filenames;
@@ -370,6 +387,10 @@ int main(int argc, char *argv[])
 			std::string const filename = i.substr(pos_filename);
 			std::string const ext = i.substr(i.find_last_of(".") + 1);
 			std::string const filename_without_ext = filename.substr(0, filename.find_last_of("."));
+
+			if (requested_files.find(filename_without_ext) == requested_files.end()) {
+				continue;
+			}
 
 			if (ext == "jpg" || ext == "JPG" || 
 				ext == "jpeg" || ext == "JPEG" ||
@@ -397,6 +418,10 @@ int main(int argc, char *argv[])
 			std::string const filename = i.substr(pos_filename);
 			std::string const ext = i.substr(i.find_last_of(".") + 1);
 			std::string const filename_without_ext = filename.substr(0, filename.find_last_of("."));
+
+			if (requested_files.find(filename_without_ext) == requested_files.end()) {
+				continue;
+			}
 
 			if (ext == "txt") {
 				txt_filenames.push_back(filename_without_ext);
