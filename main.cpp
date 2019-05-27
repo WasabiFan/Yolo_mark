@@ -18,6 +18,8 @@
 //#include <opencv2/optflow.hpp>
 #include <opencv2/video/tracking.hpp>
 
+#include "alphanum.hpp"
+
 #ifdef _DEBUG
 #define LIB_SUFFIX "d.lib"
 #else
@@ -428,9 +430,9 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		std::sort(jpg_filenames.begin(), jpg_filenames.end());
-		std::sort(jpg_filenames_path.begin(), jpg_filenames_path.end());
-		std::sort(txt_filenames.begin(), txt_filenames.end());
+		std::sort(jpg_filenames.begin(), jpg_filenames.end(), doj::alphanum_less<std::string>());
+		std::sort(jpg_filenames_path.begin(), jpg_filenames_path.end(), doj::alphanum_less<std::string>());
+		std::sort(txt_filenames.begin(), txt_filenames.end(), doj::alphanum_less<std::string>());
 
 		if (jpg_filenames.size() == 0) {
 			std::cout << "Error: Image files not found by path: " << images_path << std::endl;
