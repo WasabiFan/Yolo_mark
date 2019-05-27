@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
 			std::string const ext = i.substr(i.find_last_of(".") + 1);
 			std::string const filename_without_ext = filename.substr(0, filename.find_last_of("."));
 
-			if (requested_files.find(filename_without_ext) == requested_files.end()) {
+			if (!requested_files.empty() && requested_files.find(filename_without_ext) == requested_files.end()) {
 				continue;
 			}
 
